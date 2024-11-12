@@ -19,5 +19,8 @@ async def main():
     finally:
         await data_processor.stop()
 
+def run():
+    asyncio.run(main())
+
 if __name__ == "__main__":
     asyncio.run(main())

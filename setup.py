@@ -36,5 +36,11 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        'console_scripts': [
+            'h3xrecon-dataprocessor=h3xrecon_server.dataprocessor.main:run',
+            'h3xrecon-jobprocessor=h3xrecon_server.jobprocessor.main:run',
+        ],
+    },
     python_requires=">=3.9",
 )
