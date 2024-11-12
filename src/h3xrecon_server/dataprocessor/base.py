@@ -1,6 +1,7 @@
 from h3xrecon_core import DatabaseManager
 from h3xrecon_core import Config
 from h3xrecon_core import QueueManager
+import asyncio
 from dataclasses import dataclass
 from typing import Dict, Any, List, Callable
 from loguru import logger
