@@ -284,10 +284,10 @@ class JobProcessor:
             url_msg = {
                 "program_id": msg_data.get('program_id'),
                 "data_type": "url",
-                "data": {
+                "data": [{
                     "url": msg_data.get('output', {}).get('url'),
                     "httpx_data": msg_data.get('output', {})
-                }
+                }]
             }
             await self.qm.publish_message(subject="recon.data", stream="RECON_DATA", message=url_msg)
             # await self.nc.publish(msg_data.get('recon_data_queue', "recon.data"), json.dumps(url_msg).encode())
