@@ -31,8 +31,8 @@ setup(
         "jsondiff",
         "python-dateutil",
         "dnspython",
-        "h3xrecon-core @ git+https://github.com/h3xitsec/h3xrecon-core.git@{current_branch}",
-        "h3xrecon-worker @ git+https://github.com/h3xitsec/h3xrecon-worker.git@{current_branch}"
+        f"h3xrecon-core @ git+https://github.com/h3xitsec/h3xrecon-core.git@{current_branch}",
+        f"h3xrecon-worker @ git+https://github.com/h3xitsec/h3xrecon-worker.git@{current_branch}"
     ],
     author="@h3xitsec",
     description="Server components for h3xrecon bug bounty reconnaissance automation",
