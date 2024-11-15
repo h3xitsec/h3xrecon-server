@@ -1,5 +1,12 @@
 from setuptools import setup, find_packages
 import os
+import subprocess
+
+# Get current git branch
+try:
+    current_branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('utf-8').strip()
+except (subprocess.CalledProcessError, FileNotFoundError):
+    current_branch = 'main'  # Fallback to main if git command fails
 
 # Get the absolute path to the README.md file
 readme_path = os.path.join(os.path.dirname(__file__), 'README.md')
@@ -24,7 +31,8 @@ setup(
         "jsondiff",
         "python-dateutil",
         "dnspython",
-        "h3xrecon-core @ git+https://github.com/h3xitsec/h3xrecon-core.git@main"
+        "h3xrecon-core @ git+https://github.com/h3xitsec/h3xrecon-core.git@{current_branch}",
+        "h3xrecon-worker @ git+https://github.com/h3xitsec/h3xrecon-worker.git@{current_branch}"
     ],
     author="@h3xitsec",
     description="Server components for h3xrecon bug bounty reconnaissance automation",
