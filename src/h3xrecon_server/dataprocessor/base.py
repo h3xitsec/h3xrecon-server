@@ -5,6 +5,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import Dict, Any, List, Callable
 from loguru import logger
+from urllib.parse import urlparse 
 import os
 import traceback
 import json
@@ -146,12 +147,16 @@ class DataProcessor:
         logger.info(msg_data)
         for domain in msg_data.get('data'):
             logger.info(f"Processing domain: {domain}")
-            inserted = await self.db_manager.insert_domain(
-                domain=domain, 
-                ips=msg_data.get('attributes', {}).get('ips'), 
-                cnames=msg_data.get('attributes', {}).get('cnames'), 
-                is_catchall=msg_data.get('attributes', {}).get('is_catchall'), 
-                program_id=msg_data.get('program_id')
+            if not await self.db_manager.check_domain_regex_match(domain, msg_data.get('program_id')):
+                logger.info(f"Domain {domain} is not part of program {msg_data.get('program_id')}. Skipping processing.")
+                continue
+            else:
+                inserted = await self.db_manager.insert_domain(
+                    domain=domain, 
+                    ips=msg_data.get('attributes', {}).get('ips'), 
+                    cnames=msg_data.get('attributes', {}).get('cnames'), 
+                    is_catchall=msg_data.get('attributes', {}).get('is_catchall'), 
+                    program_id=msg_data.get('program_id')
             )
             if inserted:
                 await self.trigger_new_jobs(program_id=msg_data.get('program_id'), data_type="domain", result=domain)
@@ -180,23 +185,36 @@ class DataProcessor:
     # }
     async def process_url(self, msg: Dict[str, Any]):
         if msg:
-            try:
-                msg_data = msg.get('data', {})
-                
-                logger.info(f"Processing URL result for program {msg.get('program_id')}: {msg_data.get('url', {})}")
-                await self.db_manager.insert_url(
-                    url=msg_data.get('url'),
-                    httpx_data=msg_data.get('httpx_data', {}),
-                    program_id=msg.get('program_id')
-                )
-                # Send a job to the workers to test the URL if httpx_data is missing
-                if not msg_data.get('httpx_data'):
-                    logger.info(f"Sending job to test URL: {msg_data.get('url')}")
-                    await self.qm.publish_message(subject="function.execute", stream="FUNCTION_EXECUTE", message={"function": "test_http", "program_id": msg.get('program_id'), "params": {"target": msg_data.get('url')}})
-                
-            except Exception as e:
-                logger.error(f"Failed to process URL in program {msg.get('program_id')}: {e}")
-                logger.exception(e)
+            msg_data = msg.get('data', {})
+            # Extract hostname from the URL
+            for d in msg_data:
+                try:
+                    parsed_url = urlparse(d.get('url'))
+                    hostname = parsed_url.hostname
+                    if not hostname:
+                        logger.error(f"Failed to extract hostname from URL: {d.get('url')}")
+                        return
+                    program_name = await self.db_manager.get_program_name(msg.get('program_id'))
+                    logger.info(await self.db_manager.get_programs())
+                    # Check if the hostname matches the scope regex
+                    is_in_scope = await self.db_manager.check_domain_regex_match(hostname, msg.get('program_id'))
+                    if not is_in_scope:
+                        logger.info(f"Hostname {hostname} is not in scope for program {program_name}. Skipping.")
+                        return
+                    logger.info(f"Processing URL result for program {msg.get('program_id')}: {d.get('url', {})}")
+                    await self.db_manager.insert_url(
+                        url=d.get('url'),
+                        httpx_data=d.get('httpx_data', {}),
+                        program_id=msg.get('program_id')
+                    )
+                    # Send a job to the workers to test the URL if httpx_data is missing
+                    if not d.get('httpx_data'):
+                        logger.info(f"Sending job to test URL: {d.get('url')}")
+                        await self.qm.publish_message(subject="function.execute", stream="FUNCTION_EXECUTE", message={"function": "test_http", "program_id": msg.get('program_id'), "params": {"target": msg_data.get('url')}})
+            
+                except Exception as e:
+                    logger.error(f"Failed to process URL in program {msg.get('program_id')}: {e}")
+                    logger.exception(e)
     
     # Input format
     # {

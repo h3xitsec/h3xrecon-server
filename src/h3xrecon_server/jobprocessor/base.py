@@ -159,7 +159,6 @@ class JobProcessor:
     # }
     async def process_resolve_domain(self, msg_data: Dict[str, Any]):
         try:
-            logger.debug(msg_data)
             if await self.db_manager.check_domain_regex_match(msg_data.get('output').get('host'), msg_data.get('program_id')):
                 if isinstance(msg_data.get('output').get('a_records'), list):
                     for ip in msg_data.get('output').get('a_records'):
@@ -278,7 +277,9 @@ class JobProcessor:
     # }
     async def process_test_http(self, msg_data: Dict[str, Any]):
         logger.debug(f"Incoming message:\nObject Type: {type(msg_data)}\nObject:\n{json.dumps(msg_data, indent=4)}")
-        if await self.db_manager.check_domain_regex_match(msg_data.get('source').get('target'), msg_data.get('program_id')):
+        if not await self.db_manager.check_domain_regex_match(msg_data.get('source').get('target'), msg_data.get('program_id')):
+            logger.info(f"Domain {msg_data.get('source').get('target')} is not part of program {msg_data.get('program_id')}. Skipping processing.")
+        else:
             logger.info(f"Domain {msg_data.get('source').get('target')} is part of program {msg_data.get('program_id')}. Sending to data processor.")
             url_msg = {
                 "program_id": msg_data.get('program_id'),
