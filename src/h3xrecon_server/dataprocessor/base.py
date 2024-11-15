@@ -185,6 +185,7 @@ class DataProcessor:
     # }
     async def process_url(self, msg: Dict[str, Any]):
         if msg:
+            logger.info(msg)
             msg_data = msg.get('data', {})
             # Extract hostname from the URL
             for d in msg_data:
@@ -210,7 +211,7 @@ class DataProcessor:
                     # Send a job to the workers to test the URL if httpx_data is missing
                     if not d.get('httpx_data'):
                         logger.info(f"Sending job to test URL: {d.get('url')}")
-                        await self.qm.publish_message(subject="function.execute", stream="FUNCTION_EXECUTE", message={"function": "test_http", "program_id": msg.get('program_id'), "params": {"target": msg_data.get('url')}})
+                        await self.qm.publish_message(subject="function.execute", stream="FUNCTION_EXECUTE", message={"function": "test_http", "program_id": msg.get('program_id'), "params": {"target": d.get('url')}})
             
                 except Exception as e:
                     logger.error(f"Failed to process URL in program {msg.get('program_id')}: {e}")
